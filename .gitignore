@@ -1,0 +1,57 @@
+# Build directories
+/build/
+/out/
+/bin/
+/Debug/
+/Release/
+
+# CMake-generated files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+install_manifest.txt
+
+# Compiled binaries
+*.o
+*.obj
+*.so
+*.dll
+*.dylib
+*.exe
+*.a
+*.lib
+*.pch
+*.pdb
+
+# Ninja build files
+build.ninja
+.ninja_deps
+.ninja_log
+
+# VSCode
+.vscode/
+
+# CLion / JetBrains
+.idea/
+cmake-build-*/
+
+# Mac OS
+.DS_Store
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# Logs and temp
+/tmp/
+/temp/
+/log/
+/logs/
+
+*.log
+*.tmp
+*.bak
+
+# Shader Files
+*.spv

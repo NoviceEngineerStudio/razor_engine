@@ -1,6 +1,7 @@
 #include "./re_vulkan_backend.h"
 
 #include <vulkan/vulkan.h>
+#include "./re_device_layer.h"
 #include "../../windows/re_vulkan_window.h"
 
 #define __RE_VULKAN_ENABLED_INSTANCE_LAYER_COUNT__ 1
@@ -16,6 +17,8 @@ static const char* __RE_VULKAN_ENABLED_DEVICE_EXTENSIONS__[__RE_VULKAN_ENABLED_D
 typedef struct re_VulkanBackend_T {
     VkInstance instance;
     VkSurfaceKHR surface;
+
+    re_VkDeviceLayer device_layer;
 
     VkAllocationCallbacks* allocator;
 } re_VulkanBackend_T;
@@ -36,6 +39,8 @@ void re_destroyVulkanBackend(re_GraphicsBackend* backend) {
 
     re_VulkanBackend vulkan_backend = (*backend)->__user_data__;
     re_assert(vulkan_backend != NULL, "Attempting to destroy uninitialized Vulkan backend! Likely tampered with __user_data__...");
+
+    re_destroyVulkanDeviceLayer(&vulkan_backend->device_layer, vulkan_backend->allocator);
 
     vkDestroySurfaceKHR(vulkan_backend->instance, vulkan_backend->surface, vulkan_backend->allocator);
     vkDestroyInstance(vulkan_backend->instance, vulkan_backend->allocator);
@@ -187,6 +192,25 @@ re_GraphicsBackend re_createVulkanBackend(const re_GraphicsBackendCreateInfo* cr
     vulkan_backend->surface = re_createVulkanSurface(
         create_info->window,
         vulkan_backend->instance,
+        vulkan_backend->allocator
+    );
+
+    re_VkDeviceLayerCreateInfo device_layer_create_info = {0};
+    device_layer_create_info.instance = vulkan_backend->instance;
+    device_layer_create_info.surface = vulkan_backend->surface;
+    device_layer_create_info.enabled_extensions = __RE_VULKAN_ENABLED_DEVICE_EXTENSIONS__;
+    device_layer_create_info.enabled_extension_count = __RE_VULKAN_ENABLED_DEVICE_EXTENSION_COUNT__;
+
+    device_layer_create_info.max_texture_count = 50; // TODO: These are all arbitrary and should be set according to the needs of the frontend renderer (or some better defaults)
+    device_layer_create_info.max_sampler_count = 50;
+    device_layer_create_info.max_storage_image_count = 50;
+    device_layer_create_info.max_uniform_buffer_count = 50;
+    device_layer_create_info.max_storage_buffer_count = 50;
+    device_layer_create_info.max_input_attachment_count = 50;
+    device_layer_create_info.max_dynamic_uniform_buffer_count = 50;
+
+    vulkan_backend->device_layer = re_createVulkanDeviceLayer(
+        &device_layer_create_info,
         vulkan_backend->allocator
     );
 

@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 4.0.2)
+
+set(PROJECT_NAME "RazorEngine")
+project(${PROJECT_NAME} VERSION 0.0.1 LANGUAGES C CXX)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_C_STANDARD_REQUIRED ON)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(RAZOR_NAME "Razor")
+set(EXAMPLE_NAME "ExampleProject")
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/razor)
+add_subdirectory(${PROJECT_SOURCE_DIR}/example)

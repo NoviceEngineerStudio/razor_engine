@@ -7,7 +7,7 @@ endif()
 add_library(${RAZOR_NAME} SHARED ${SOURCES})
 
 target_include_directories(${RAZOR_NAME} PUBLIC ${PROJECT_SOURCE_DIR}/razor/include)
-add_compile_definitions(${RAZOR_NAME} RE_BUILD_DLL=1)
+add_compile_definitions(${RAZOR_NAME} RE_BUILD_DLL=1 RE_ASSERT_ENABLED=1 RE_LOGGER_ENABLED=1)
 
 #############################
 # VULKAN                    #

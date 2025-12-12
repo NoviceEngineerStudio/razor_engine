@@ -1,7 +1,7 @@
-file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/razor/src/*.c)
+file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/razor/src/*.c ${PROJECT_SOURCE_DIR}/razor/src/*.cpp)
 
 if (SOURCES STREQUAL "")
-    message(FATAL_ERROR "No source files found for Razor")
+    message(FATAL_ERROR "No source files found for ${RAZOR_NAME}")
 endif()
 
 add_library(${RAZOR_NAME} SHARED ${SOURCES})

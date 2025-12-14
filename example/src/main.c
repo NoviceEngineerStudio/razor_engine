@@ -9,10 +9,16 @@ void quit_app() {
 }
 
 int main(void) {
-    re_init();
+    re_InitParams init_params = {0};
+    init_params.core.app_name = "Example Project v0.0.1";
+    init_params.core.app_major_version = 0u;
+    init_params.core.app_minor_version = 0u;
+    init_params.core.app_patch_version = 1u;
+
+    re_init(&init_params);
 
     re_WindowCreateInfo window_create_info = {0};
-    window_create_info.title = "Example Project";
+    window_create_info.title = init_params.core.app_name;
     window_create_info.width = 800;
     window_create_info.height = 400;
     window_create_info.flags = RE_WINDOW_RESIZEABLE;

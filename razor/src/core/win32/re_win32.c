@@ -8,19 +8,11 @@ HINSTANCE h_instance = RE_NULL_HANDLE;
 
 // *=================================================
 // *
-// * re_coreInit
+// * __re_initCoreWin32
 // *
 // *=================================================
 
-void re_coreInit() {
-    static bool has_init = false;
-
-    if (has_init) {
-        return;
-    }
-
-    has_init = true;
-
+void __re_initCoreWin32() {
     process_heap = GetProcessHeap();
     re_assert(process_heap != RE_NULL_HANDLE, "HELL");
     h_instance = GetModuleHandle(RE_NULL_HANDLE);

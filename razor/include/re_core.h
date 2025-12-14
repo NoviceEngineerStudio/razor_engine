@@ -119,8 +119,16 @@
 // *
 // *=================================================
 
+typedef struct re_CoreInitParams {
+    const char* app_name;
+    uint8_t app_major_version;
+    uint8_t app_minor_version;
+    uint8_t app_patch_version;
+} re_CoreInitParams;
+
 /// @brief Initialize the core engine module.
-RE_API void re_coreInit();
+/// @param params The core modules initialization parameters.
+RE_API void re_coreInit(const re_CoreInitParams* params);
 
 // *=================================================
 // *

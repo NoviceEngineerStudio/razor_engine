@@ -11,6 +11,9 @@
 extern HANDLE process_heap;
 extern HINSTANCE h_instance;
 
+/// @brief Initialize the Win32 core module values.
+void __re_initCoreWin32();
+
 /// @brief Processes an internal window event.
 /// @param h_window The window receiving the event.
 /// @param u_message The window message tag.

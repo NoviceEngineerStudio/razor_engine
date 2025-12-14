@@ -3,6 +3,7 @@
 
 #include "./re_core.h"
 #include "./re_debug.h"
+#include "./re_graphics.h"
 
 #ifdef __cplusplus
     extern "C" {
@@ -14,8 +15,12 @@
 // *
 // *=================================================
 
+typedef struct re_InitParams {
+    re_CoreInitParams core;
+} re_InitParams;
+
 /// @brief Initialize all engine modules.
-RE_API void re_init();
+RE_API void re_init(const re_InitParams* params);
 
 // *=================================================
 

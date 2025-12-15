@@ -469,8 +469,6 @@ void __re_createVulkanDeviceLayer(
         __RE_DESCRIPTOR_SIZE_COUNT,
         allocator
     );
-
-    return device_layer;
 }
 
 // *=================================================

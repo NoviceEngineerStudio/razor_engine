@@ -3,6 +3,7 @@
 
 #include "./re_core.h"
 #include "./re_debug.h"
+#include "./re_utils.h"
 #include "./re_graphics.h"
 
 #ifdef __cplusplus

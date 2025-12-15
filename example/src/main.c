@@ -26,10 +26,18 @@ int main(void) {
     re_Window window = re_createWindow(&window_create_info);
     re_setWindowCloseCallback(window, quit_app);
 
+    re_GraphicsContextCreateInfo graphics_ctx_create_info = {0};
+    graphics_ctx_create_info.window = window;
+
+    re_GraphicsContext graphics_ctx = re_createGraphicsContext(&graphics_ctx_create_info);
+
     is_running = true;
     while (is_running) {
         re_pollEvents(window);
     }
+
+    re_destroyGraphicsContext(&graphics_ctx);
+    re_destroyWindow(&window);
 
     return 0;
 }

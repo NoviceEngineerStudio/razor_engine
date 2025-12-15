@@ -3,6 +3,12 @@
 
 #include <re_core.h>
 
+// *=================================================
+// *
+// * Engine Module-Level Metadata
+// *
+// *=================================================
+
 typedef enum re_EngineModuleBits {
     RE_ALL_MODULES     = 1 << 0,
     
@@ -26,6 +32,12 @@ void __re_setModuleInit(const re_EngineModuleBits module);
     if (__re_checkModuleInit( module )) { return; } \
     __re_setModuleInit( module ); \
 } while(0)
+
+// *=================================================
+// *
+// * Global Variables
+// *
+// *=================================================
 
 extern const char* RE_APP_NAME;
 extern uint8_t RE_APP_MAJOR_VERSION;

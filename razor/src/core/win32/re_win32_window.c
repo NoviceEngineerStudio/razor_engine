@@ -2,8 +2,6 @@
 
 #include <re_debug.h>
 #include "./re_win32.h"
-#include "../re_vulkan_window.h"
-#include <vulkan/vulkan_win32.h>
 
 typedef struct re_Window_T {
     HWND h_window;
@@ -22,11 +20,18 @@ typedef struct re_Window_T {
     re_WindowFlag flags;
 } re_Window_T;
 
+#ifdef RE_VULKAN_AVAILABLE
+
+#include "../re_vulkan_window.h"
+#include <vulkan/vulkan_win32.h>
+
 #define __RE_VULKAN_WINDOW_EXTENSION_COUNT 2u
 static const char* __RE_VULKAN_WINDOW_EXTENSIONS[__RE_VULKAN_WINDOW_EXTENSION_COUNT] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 };
+
+#endif
 
 // *=================================================
 // *
@@ -83,6 +88,8 @@ LRESULT CALLBACK __re_processWin32WindowEvents(
     return DefWindowProc(h_window, u_message, w_param, l_param);
 }
 
+#ifdef RE_VULKAN_AVAILABLE
+
 // *=================================================
 // *
 // * __re_getVulkanWindowExtensions
@@ -137,6 +144,8 @@ VkExtent2D __re_getVulkanExtent(const re_Window window) {
 
     return extent;
 }
+
+#endif
 
 // *=================================================
 // *

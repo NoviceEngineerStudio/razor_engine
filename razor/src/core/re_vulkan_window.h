@@ -1,3 +1,5 @@
+#ifdef RE_VULKAN_AVAILABLE
+
 #ifndef __RAZOR_CORE_VULKAN_WINDOW_HEADER_FILE
 #define __RAZOR_CORE_VULKAN_WINDOW_HEADER_FILE
 
@@ -24,5 +26,7 @@ VkSurfaceKHR __re_createVulkanSurface(
 /// @param window The window to get the size of.
 /// @return The window's dimensions as a Vulkan 2D extent.
 VkExtent2D __re_getVulkanExtent(const re_Window window);
+
+#endif
 
 #endif

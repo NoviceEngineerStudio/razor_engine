@@ -1,7 +1,7 @@
 file(GLOB_RECURSE SOURCES ${PROJECT_SOURCE_DIR}/razor/src/*.c ${PROJECT_SOURCE_DIR}/razor/src/*.cpp)
 
 if (SOURCES STREQUAL "")
-    message(FATAL_ERROR "No source files found for ${RAZOR_NAME}")
+    message(FATAL_ERROR "No source files found for ${RAZOR_NAME}!")
 endif()
 
 add_library(${RAZOR_NAME} SHARED ${SOURCES})
@@ -30,6 +30,7 @@ endif()
 if (Vulkan_FOUND)
     target_link_libraries(${RAZOR_NAME} PRIVATE ${Vulkan_LIBRARIES})
     target_include_directories(${RAZOR_NAME} PRIVATE ${Vulkan_INCLUDE_DIR})
-else() # Currently, Vulkan is required
-    message(FATAL_ERROR "Could not find Vulkan package for ${RAZOR_NAME}")
+    add_compile_definitions(${RAZOR_NAME} RE_VULKAN_AVAILABLE=1)
+else()
+    message(WARNING "Compiling ${RAZOR_NAME} without Vulkan...")
 endif()

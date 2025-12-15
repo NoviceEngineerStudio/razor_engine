@@ -11,16 +11,7 @@
 
 #define __RE_VULKAN_API_VER VK_API_VERSION_1_3
 
-typedef struct re_VulkanContext_T {
-    VkInstance instance;
-    VkSurfaceKHR surface;
-    VkRenderPass render_pass;
-
-    re_VkDeviceLayer device_layer;
-    re_VkSwapChainLayer swap_chain_layer;
-
-    VkAllocationCallbacks* allocator;
-} re_VulkanContext_T;
+typedef struct re_VulkanContext_T re_VulkanContext_T;
 typedef re_VulkanContext_T* re_VulkanContext;
 
 /// @brief Determine if Vulkan is available on this device.

@@ -25,8 +25,15 @@ RE_API void re_graphicsInit();
 typedef struct re_GraphicsContext_T re_GraphicsContext_T;
 typedef re_GraphicsContext_T* re_GraphicsContext;
 
+typedef enum re_RenderProfile {
+    RE_RENDERER_SIMPLE,
+    RE_RENDERER_STANDARD,
+    RE_RENDERER_HEAVY
+} re_RenderProfile;
+
 typedef struct re_GraphicsContextCreateInfo {
     re_Window window;
+    re_RenderProfile profile;
 } re_GraphicsContextCreateInfo;
 
 /// @brief Creates a new backend graphics context.

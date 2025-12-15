@@ -28,6 +28,7 @@ int main(void) {
 
     re_GraphicsContextCreateInfo graphics_ctx_create_info = {0};
     graphics_ctx_create_info.window = window;
+    graphics_ctx_create_info.profile = RE_RENDERER_STANDARD;
 
     re_GraphicsContext graphics_ctx = re_createGraphicsContext(&graphics_ctx_create_info);
 

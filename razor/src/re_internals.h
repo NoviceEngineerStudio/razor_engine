@@ -40,8 +40,8 @@ void __re_setModuleInit(const re_EngineModuleBits module);
 // *=================================================
 
 extern const char* RE_APP_NAME;
-extern uint8_t RE_APP_MAJOR_VERSION;
-extern uint8_t RE_APP_MINOR_VERSION;
-extern uint8_t RE_APP_PATCH_VERSION;
+extern uint8_t RE_APP_MAJOR_VER;
+extern uint8_t RE_APP_MINOR_VER;
+extern uint8_t RE_APP_PATCH_VER;
 
 #endif

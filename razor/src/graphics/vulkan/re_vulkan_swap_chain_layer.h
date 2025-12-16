@@ -88,7 +88,8 @@ void __re_createVulkanSwapChainLayer(
 void __re_destroyVulkanSwapChainLayer(
     re_VkSwapChainLayer* swap_chain_layer,
     const re_VkDeviceLayer* device_layer,
-    const VkAllocationCallbacks* allocator
+    const VkAllocationCallbacks* allocator,
+    const bool clear_swap_chain
 );
 
 /// @brief Regenerates the internal values of a Vulkan swap chain layer.

@@ -290,7 +290,8 @@ void __re_destroyVulkanContext(re_VulkanContext* context) {
     __re_destroyVulkanSwapChainLayer(
         &context_data->swap_chain_layer,
         &context_data->device_layer,
-        allocator
+        allocator,
+        true
     );
 
     vkDestroyRenderPass(

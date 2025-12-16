@@ -6,8 +6,6 @@
 #include <re_core.h>
 #include <re_graphics.h>
 #include <vulkan/vulkan.h>
-#include "./re_vulkan_device_layer.h"
-#include "./re_vulkan_swap_chain_layer.h"
 
 #define __RE_VULKAN_API_VER VK_API_VERSION_1_3
 

@@ -58,6 +58,7 @@ typedef struct re_VkDeviceLayer {
 } re_VkDeviceLayer;
 
 /// @brief Creates a new Vulkan device layer object.
+/// @param device_layer The device layer's memory pointer.
 /// @param create_info The device layer's creation parameters.
 /// @param allocator The Vulkan allocation callbacks.
 /// @return A new Vulkan device layer object.

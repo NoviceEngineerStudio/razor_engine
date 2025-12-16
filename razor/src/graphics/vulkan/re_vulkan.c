@@ -4,7 +4,9 @@
 #include <re_utils.h>
 #include "./re_vulkan.h"
 #include "../../re_internals.h"
+#include "./re_vulkan_device_layer.h"
 #include "../../core/re_vulkan_window.h"
+#include "./re_vulkan_swap_chain_layer.h"
 
 #ifdef RE_LOGGER_ENABLED
 
@@ -140,7 +142,7 @@ re_VulkanContext __re_createVulkanContext(const re_GraphicsContextCreateInfo* cr
     re_VulkanContext context = (re_VulkanContext)re_calloc(1, sizeof(re_VulkanContext_T));
 
     // ? Set to NULL for now, but may change for efficiency or debug purposes later
-    const VkAllocationCallbacks* allocator = VK_NULL_HANDLE;
+    VkAllocationCallbacks* allocator = VK_NULL_HANDLE;
     context->allocator = allocator;
 
     VkApplicationInfo app_info = {0};
@@ -225,9 +227,48 @@ re_VulkanContext __re_createVulkanContext(const re_GraphicsContextCreateInfo* cr
         allocator
     );
 
-    // TODO: Create Render Pass
-    
-    // TODO: Create Swap Chain Layer
+    VkRenderPassCreateInfo render_pass_create_info = {0};
+    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    // TODO: Assign these as needed!
+    // render_pass_create_info.flags = ;
+    // render_pass_create_info.attachmentCount = ;
+    // render_pass_create_info.pAttachments = ;
+    // render_pass_create_info.subpassCount = ;
+    // render_pass_create_info.pSubpasses = ;
+    // render_pass_create_info.dependencyCount = ;
+    // render_pass_create_info.pDependencies = ;
+
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    const VkResult render_pass_create_result = vkCreateRenderPass(
+        context->device_layer.logical_device,
+        &render_pass_create_info,
+        allocator,
+        &render_pass
+    );
+
+    re_assert(render_pass_create_result == VK_SUCCESS, "Failed to create Vulkan rendering pass!");
+    context->render_pass = render_pass;
+
+    re_VkSwapChainLayerCreateInfo swap_chain_layer_create_info = {0};
+    swap_chain_layer_create_info.window_size = __re_getVulkanExtent(create_info->window);
+    swap_chain_layer_create_info.surface = surface;
+    swap_chain_layer_create_info.render_pass = render_pass;
+    // TODO: Assign values here!
+    // swap_chain_layer_create_info.color_format = ;
+    // swap_chain_layer_create_info.present_mode = ;
+    // swap_chain_layer_create_info.view_create_infos = ;
+    // swap_chain_layer_create_info.view_count = ;
+    // swap_chain_layer_create_info.image_usage_flags = ;
+    // swap_chain_layer_create_info.target_frame_count = ;
+    // swap_chain_layer_create_info.is_vr_application = ;
+    // swap_chain_layer_create_info.is_window_transparent = ;
+
+    __re_createVulkanSwapChainLayer(
+        &context->swap_chain_layer,
+        &swap_chain_layer_create_info,
+        &context->device_layer,
+        allocator
+    );
 
     return context;
 }
@@ -244,11 +285,19 @@ void __re_destroyVulkanContext(re_VulkanContext* context) {
     re_VulkanContext context_data = *context;
     re_assert(context_data != RE_NULL_HANDLE, "Attempting to destroy NULL Vulkan backend context!");
 
-    const VkAllocationCallbacks* allocator = context_data->allocator;
+    VkAllocationCallbacks* allocator = context_data->allocator;
 
-    // TODO: Destroy Swap Chain Layer
+    __re_destroyVulkanSwapChainLayer(
+        &context_data->swap_chain_layer,
+        &context_data->device_layer,
+        allocator
+    );
 
-    vkDestroyRenderPass(context_data->device_layer.logical_device, context_data->render_pass, allocator);
+    vkDestroyRenderPass(
+        context_data->device_layer.logical_device,
+        context_data->render_pass,
+        allocator
+    );
 
     __re_destroyVulkanDeviceLayer(&context_data->device_layer, allocator);
 

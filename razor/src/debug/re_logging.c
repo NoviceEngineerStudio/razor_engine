@@ -7,7 +7,7 @@
 #ifdef RE_LOGGER_ENABLED
 #define __RE_LOG_TIME_BUFFER_SIZE 20u
 
-static FILE* __re_log_file__ = NULL;
+static FILE* __re_log_file__ = RE_NULL_HANDLE;
 static char __time_buffer[__RE_LOG_TIME_BUFFER_SIZE];
 #endif
 
@@ -19,7 +19,7 @@ static char __time_buffer[__RE_LOG_TIME_BUFFER_SIZE];
 
 void __re_internalLog(const char* format, ...) {
     #ifdef RE_LOGGER_ENABLED
-    time_t now = time(NULL);
+    time_t now = time(RE_NULL_HANDLE);
     struct tm local_time;
     
     #if RE_PLATFORM == RE_PLATFORM_WINDOWS
@@ -33,7 +33,7 @@ void __re_internalLog(const char* format, ...) {
     va_list args;
     va_start(args, format);
 
-    if (__re_log_file__ == NULL) {
+    if (__re_log_file__ == RE_NULL_HANDLE) {
         #if RE_PLATFORM == RE_PLATFORM_WINDOWS
         printf_s("%s - ", __time_buffer);
         vprintf_s(format, args);
@@ -66,9 +66,9 @@ void __re_internalLog(const char* format, ...) {
 
 void re_closeLogFile() {
     #ifdef RE_LOGGER_ENABLED
-    if (__re_log_file__ != NULL) {
+    if (__re_log_file__ != RE_NULL_HANDLE) {
         fclose(__re_log_file__);
-        __re_log_file__ = NULL;
+        __re_log_file__ = RE_NULL_HANDLE;
     }
     #endif
 }
@@ -89,7 +89,7 @@ void re_setLogFile(const char* file_path) {
     fopen(file_path, "w");
     #endif
 
-    if (__re_log_file__ == NULL) {
+    if (__re_log_file__ == RE_NULL_HANDLE) {
         re_logError("Failed to open logging file: %s", file_path);
     }
     #endif

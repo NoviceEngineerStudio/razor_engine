@@ -29,6 +29,12 @@ int main(void) {
     re_GraphicsContextCreateInfo graphics_ctx_create_info = {0};
     graphics_ctx_create_info.window = window;
     graphics_ctx_create_info.profile = RE_RENDERER_STANDARD;
+    graphics_ctx_create_info.vsync_enabled = true;
+    graphics_ctx_create_info.render_pass_description.attachment_count = ;
+    graphics_ctx_create_info.render_pass_description.attachments = ;
+    graphics_ctx_create_info.render_pass_description.subpass_count = ;
+    graphics_ctx_create_info.render_pass_description.subpasses = ;
+    graphics_ctx_create_info.render_pass_description.needs_external_sync = false;
 
     re_GraphicsContext graphics_ctx = re_createGraphicsContext(&graphics_ctx_create_info);
 

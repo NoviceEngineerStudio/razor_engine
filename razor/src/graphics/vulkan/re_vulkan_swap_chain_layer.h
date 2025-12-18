@@ -48,8 +48,8 @@ typedef struct re_VkSwapChainLayerCreateInfo {
 
     VkImageUsageFlags image_usage_flags;
     uint32_t target_frame_count;
-
-    bool is_vr_application;
+    uint32_t view_layer_count;
+    
     bool is_window_transparent;
 } re_VkSwapChainLayerCreateInfo;
 

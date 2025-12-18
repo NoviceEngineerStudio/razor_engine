@@ -80,7 +80,10 @@ void __re_createVulkanSwapChainLayer(
     swap_chain_create_info.imageFormat = create_info->color_format.format;
     swap_chain_create_info.imageColorSpace = create_info->color_format.colorSpace;
     swap_chain_create_info.imageExtent = swap_chain_layer->image_size;
-    swap_chain_create_info.imageArrayLayers = create_info->is_vr_application ? 2 : 1;
+    swap_chain_create_info.imageArrayLayers = min(
+        create_info->view_layer_count,
+        device_layer->gpu.capabilities.maxImageArrayLayers
+    );
     swap_chain_create_info.imageUsage = create_info->image_usage_flags;
     swap_chain_create_info.queueFamilyIndexCount = queue_index_count;
     swap_chain_create_info.pQueueFamilyIndices = unique_queue_indices;

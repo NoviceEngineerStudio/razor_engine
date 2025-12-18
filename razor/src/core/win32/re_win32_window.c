@@ -293,7 +293,7 @@ void re_destroyWindow(re_Window* window) {
 // *=================================================
 
 void re_getWindowSize(const re_Window window, uint32_t* width, uint32_t* height) {
-    re_assert(window != NULL, "Attempting to set fullscreen mode of NULL window!");
+    re_assert(window != RE_NULL_HANDLE, "Attempting to set fullscreen mode of NULL window!");
 
     *width = window->width;
     *height = window->height;
@@ -306,7 +306,7 @@ void re_getWindowSize(const re_Window window, uint32_t* width, uint32_t* height)
 // *=================================================
 
 bool re_isWindowFullscreen(const re_Window window) {
-    re_assert(window != NULL, "Attempting to set fullscreen mode of NULL window!");
+    re_assert(window != RE_NULL_HANDLE, "Attempting to set fullscreen mode of NULL window!");
 
     return (window->flags & RE_WINDOW_FULLSCREEN) != 0;
 }
@@ -318,7 +318,7 @@ bool re_isWindowFullscreen(const re_Window window) {
 // *=================================================
 
 void re_setWindowFullscreen(re_Window window, const bool fullscreen_enabled) {
-    re_assert(window != NULL, "Attempting to set fullscreen mode of NULL window!");
+    re_assert(window != RE_NULL_HANDLE, "Attempting to set fullscreen mode of NULL window!");
 
     if (re_isWindowFullscreen(window) == fullscreen_enabled) {
         return;
@@ -356,7 +356,7 @@ void re_setWindowFullscreen(re_Window window, const bool fullscreen_enabled) {
     else {
         SetWindowLong(h_window, GWL_STYLE, window->prev_style);
         SetWindowPlacement(h_window, &window->prev_place);
-        SetWindowPos(h_window, NULL, 0, 0, 0, 0, (
+        SetWindowPos(h_window, RE_NULL_HANDLE, 0, 0, 0, 0, (
             SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
             SWP_NOOWNERZORDER | SWP_FRAMECHANGED
         ));
@@ -370,7 +370,7 @@ void re_setWindowFullscreen(re_Window window, const bool fullscreen_enabled) {
 // *=================================================
 
 void re_setWindowCloseCallback(re_Window window, const re_WindowCloseCallback callback) {
-    re_assert(window != NULL, "Attempting to set fullscreen mode of NULL window!");
+    re_assert(window != RE_NULL_HANDLE, "Attempting to set fullscreen mode of NULL window!");
 
     window->onClose = callback;
 }
@@ -382,10 +382,10 @@ void re_setWindowCloseCallback(re_Window window, const re_WindowCloseCallback ca
 // *=================================================
 
 void re_pollEvents(re_Window window) {
-    re_assert(window != NULL, "Attempting to set fullscreen mode of NULL window!");
+    re_assert(window != RE_NULL_HANDLE, "Attempting to set fullscreen mode of NULL window!");
 
     MSG message;
-    while (PeekMessage(&message, NULL, 0, 0, PM_REMOVE)) {
+    while (PeekMessage(&message, RE_NULL_HANDLE, 0, 0, PM_REMOVE)) {
         TranslateMessage(&message);
         DispatchMessage(&message);
     }

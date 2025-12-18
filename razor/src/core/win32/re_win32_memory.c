@@ -35,7 +35,7 @@ void* re_calloc(const size_t element_count, const size_t element_size) {
 // *=================================================
 
 void* re_realloc(void* src, const size_t new_size) {
-    re_assert(src != NULL, "Cannot reallocate from NULL pointer!");
+    re_assert(src != RE_NULL_HANDLE, "Cannot reallocate from NULL pointer!");
     re_assert(new_size > 0, "Cannot reallocate into 0 bytes!");
 
     return HeapReAlloc(process_heap, 0, src, new_size);
@@ -48,10 +48,22 @@ void* re_realloc(void* src, const size_t new_size) {
 // *=================================================
 
 void re_free(void* src) {
-    re_assert(src != NULL, "Cannot free NULL pointer!");
+    re_assert(src != RE_NULL_HANDLE, "Cannot free NULL pointer!");
 
     BOOL ok = HeapFree(process_heap, 0, src);
     re_assert(ok, "Attempted to free invalid memory!");
+}
+
+// *=================================================
+// *
+// * re_memset
+// *
+// *=================================================
+
+void* re_memset(void* src, const int value, const size_t size) {
+    re_assert(src != RE_NULL_HANDLE, "Cannot memset NULL pointer!");
+    
+    return memset(src, value, size);
 }
 
 // *=================================================
@@ -92,7 +104,7 @@ void* re_callocAlign(const size_t element_count, const size_t element_size, cons
 // *=================================================
 
 void re_freeAlign(void* src) {
-    re_assert(src != NULL, "Cannot free NULL pointer!");
+    re_assert(src != RE_NULL_HANDLE, "Cannot free NULL pointer!");
     _aligned_free(src);
 }
 

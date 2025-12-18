@@ -158,6 +158,13 @@ RE_API void* re_realloc(void* src, const size_t new_size);
 /// @param src A pointer to the heap memory.
 RE_API void re_free(void* src);
 
+/// @brief Set a chunk of memory to some value.
+/// @param src The pointer to the chunk of memory to set.
+/// @param value The value to set the memory to.
+/// @param size The amount of memory allocated at src.
+/// @return A pointer to the chunk of memory (should match src).
+RE_API void* re_memset(void* src, const int value, const size_t size);
+
 /// @brief Allocate a chunk of aligned memory on the heap.
 /// @param size The number of bytes to allocate.
 /// @param alignment The byte count to align by.

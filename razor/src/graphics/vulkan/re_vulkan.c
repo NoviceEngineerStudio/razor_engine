@@ -27,17 +27,21 @@ static const char* __RE_VULKAN_ENABLED_DEVICE_EXTENSIONS[__RE_VULKAN_ENABLED_DEV
     VK_KHR_SWAPCHAIN_EXTENSION_NAME
 };
 
-#define RE_VULKAN_TEXTURE_COUNT_BASE 512u
-#define RE_VULKAN_SAMPLER_COUNT_BASE 64u
-#define RE_VULKAN_STORAGE_IMAGE_COUNT_BASE 128u
-#define RE_VULKAN_UNIFORM_BUFFER_COUNT_BASE 256u
-#define RE_VULKAN_STORAGE_BUFFER_COUNT_BASE 256u
-#define RE_VULKAN_INPUT_ATTACHMENT_COUNT_BASE 16u
-#define RE_VULKAN_DYNAMIC_UNIFORM_BUFFER_COUNT_BASE 128u
+#define __RE_VULKAN_TEXTURE_COUNT_BASE 512u
+#define __RE_VULKAN_SAMPLER_COUNT_BASE 64u
+#define __RE_VULKAN_STORAGE_IMAGE_COUNT_BASE 128u
+#define __RE_VULKAN_UNIFORM_BUFFER_COUNT_BASE 256u
+#define __RE_VULKAN_STORAGE_BUFFER_COUNT_BASE 256u
+#define __RE_VULKAN_INPUT_ATTACHMENT_COUNT_BASE 16u
+#define __RE_VULKAN_DYNAMIC_UNIFORM_BUFFER_COUNT_BASE 128u
 
-#define RE_VULKAN_SIMPLE_DESCRIPTOR_SIZE_MULTIPLIER 1u
-#define RE_VULKAN_STANDARD_DESCRIPTOR_SIZE_MULTIPLIER 2u
-#define RE_VULKAN_HEAVY_DESCRIPTOR_SIZE_MULTIPLIER 4u
+#define __RE_VULKAN_SIMPLE_DESCRIPTOR_SIZE_MULTIPLIER 1u
+#define __RE_VULKAN_STANDARD_DESCRIPTOR_SIZE_MULTIPLIER 2u
+#define __RE_VULKAN_HEAVY_DESCRIPTOR_SIZE_MULTIPLIER 4u
+
+#define __RE_VULKAN_COLOR_PRIORITY_B8G8R8A8_SRGB 0u
+#define __RE_VULKAN_COLOR_PRIORITY_R8G8B8_SRGB 1u
+#define __RE_VULKAN_COLOR_PRIORITY_B8G8R8_SRGB 2u
 
 typedef struct re_VulkanContext_T {
     VkInstance instance;
@@ -49,6 +53,224 @@ typedef struct re_VulkanContext_T {
 
     VkAllocationCallbacks* allocator;
 } re_VulkanContext_T;
+
+// *=================================================
+// *
+// * __re_selectVulkanColorFormat
+// *
+// *=================================================
+
+VkSurfaceFormatKHR __re_selectVulkanColorFormat(
+    const VkSurfaceFormatKHR* formats,
+    const uint32_t format_count
+) {
+    uint32_t fallback_priority = UINT32_MAX;
+    VkSurfaceFormatKHR fallback_format = formats[0];
+    for (uint32_t idx = 0; idx < format_count; ++idx) {
+        const VkSurfaceFormatKHR format = formats[idx];
+
+        if (format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            switch (format.format) {
+                case VK_FORMAT_R8G8B8A8_SRGB: {
+                    return format;
+                }
+
+                case VK_FORMAT_B8G8R8A8_SRGB: {
+                    if (fallback_priority < __RE_VULKAN_COLOR_PRIORITY_B8G8R8A8_SRGB) {
+                        continue;
+                    }
+
+                    fallback_priority = __RE_VULKAN_COLOR_PRIORITY_B8G8R8A8_SRGB;
+                    fallback_format = format;
+                }
+
+                case VK_FORMAT_R8G8B8_SRGB: {
+                    if (fallback_priority < __RE_VULKAN_COLOR_PRIORITY_R8G8B8_SRGB) {
+                        continue;
+                    }
+
+                    fallback_priority = __RE_VULKAN_COLOR_PRIORITY_R8G8B8_SRGB;
+                    fallback_format = format;
+                }
+
+                case VK_FORMAT_B8G8R8_SRGB: {
+                    if (fallback_priority < __RE_VULKAN_COLOR_PRIORITY_B8G8R8_SRGB) {
+                        continue;
+                    }
+
+                    fallback_priority = __RE_VULKAN_COLOR_PRIORITY_B8G8R8_SRGB;
+                    fallback_format = format;
+                }
+            }
+        }
+    }
+
+    return fallback_format;
+}
+
+// *=================================================
+// *
+// * __re_selectVulkanDepthFormat
+// *
+// *=================================================
+
+VkSurfaceFormatKHR __re_selectVulkanDepthFormat(
+    const VkSurfaceFormatKHR* formats,
+    const uint32_t format_count
+) {
+    uint32_t fallback_priority = UINT32_MAX;
+    VkSurfaceFormatKHR fallback_format = formats[0];
+    for (uint32_t idx = 0; idx < format_count; ++idx) {
+        const VkSurfaceFormatKHR format = formats[idx];
+
+        // TODO: Select format using priority selection
+    }
+
+    return fallback_format;
+}
+
+// *=================================================
+// *
+// * __re_selectVulkanPresentMode
+// *
+// *=================================================
+
+VkPresentModeKHR __re_selectVulkanPresentMode(
+    const VkPresentModeKHR* present_modes,
+    const uint32_t present_mode_count,
+    const bool vsync_enabled
+) {
+    if (vsync_enabled) {
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    VkPresentModeKHR fallback_mode = VK_PRESENT_MODE_FIFO_KHR;
+    for (uint32_t idx = 0; idx < present_mode_count; ++idx) {
+        switch (present_modes[idx]) {
+            case VK_PRESENT_MODE_MAILBOX_KHR: {
+                return VK_PRESENT_MODE_MAILBOX_KHR;
+            }
+
+            case VK_PRESENT_MODE_IMMEDIATE_KHR: {
+                fallback_mode = VK_PRESENT_MODE_IMMEDIATE_KHR;
+            }
+        }
+    }
+
+    return fallback_mode;
+}
+
+// *=================================================
+// *
+// * __re_createVulkanRenderPass
+// *
+// *=================================================
+
+VkRenderPass __re_createVulkanRenderPass(
+    const re_RenderPassDescription* render_pass_description,
+    const VkDevice logical_device,
+    const VkSurfaceFormatKHR color_format,
+    const VkSurfaceFormatKHR depth_format,
+    const VkAllocationCallbacks* allocator
+) {
+    const uint32_t attachment_count = render_pass_description->attachment_count;
+    const uint32_t subpass_count = render_pass_description->subpass_count;
+    const uint32_t dependency_count = render_pass_description->dependency_count;
+
+    re_assert(attachment_count <= RE_MAX_RENDER_PASS_ATTACHMENTS, "Too many attachments provided to Vulkan render pass: %d", attachment_count);
+    re_assert(subpass_count <= RE_MAX_RENDER_PASS_SUBPASSES, "Too many subpasses provided to Vulkan render pass: %d", subpass_count);
+    re_assert(dependency_count <= RE_MAX_RENDER_PASS_SUBPASSES, "Too many dependencies provided to Vulkan render pass: %d", dependency_count);
+
+    VkAttachmentDescription vk_attachments[RE_MAX_RENDER_PASS_ATTACHMENTS] = {0};
+    VkSubpassDescription vk_subpasses[RE_MAX_RENDER_PASS_SUBPASSES] = {0};
+    VkSubpassDependency vk_dependencies[RE_MAX_RENDER_PASS_DEPENDENCIES] = {0};
+
+    for (uint32_t idx = 0; idx < attachment_count; ++idx) {
+        const re_AttachmentDescription* attachment_desc = &render_pass_description->attachments[idx];
+        VkAttachmentDescription* vk_attachment = &vk_attachments[idx];
+
+        attachment_desc->type;
+        attachment_desc->is_presentable;
+
+        switch (attachment_desc->load_op) {
+            case RE_LOAD_OP_CLEAR: { vk_attachment->loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; break; }
+            case RE_LOAD_OP_LOAD: { vk_attachment->loadOp = VK_ATTACHMENT_LOAD_OP_LOAD; break; }
+            case RE_LOAD_OP_DONT_CARE: { vk_attachment->loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; break; }
+        }
+
+        switch (attachment_desc->store_op) {
+            case RE_STORE_OP_STORE: { vk_attachment->storeOp = VK_ATTACHMENT_STORE_OP_STORE; break; }
+            case RE_STORE_OP_DONT_CARE: { vk_attachment->storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; break; }
+        }
+
+        switch (attachment_desc->samples) {
+            case RE_SAMPLE_COUNT_1_BIT: { vk_attachment->samples = VK_SAMPLE_COUNT_1_BIT; break; }
+            case RE_SAMPLE_COUNT_2_BIT: { vk_attachment->samples = VK_SAMPLE_COUNT_2_BIT; break; }
+            case RE_SAMPLE_COUNT_4_BIT: { vk_attachment->samples = VK_SAMPLE_COUNT_4_BIT; break; }
+            case RE_SAMPLE_COUNT_8_BIT: { vk_attachment->samples = VK_SAMPLE_COUNT_8_BIT; break; }
+            case RE_SAMPLE_COUNT_16_BIT: { vk_attachment->samples = VK_SAMPLE_COUNT_16_BIT; break; }
+            case RE_SAMPLE_COUNT_32_BIT: { vk_attachment->samples = VK_SAMPLE_COUNT_32_BIT; break; }
+            case RE_SAMPLE_COUNT_64_BIT: { vk_attachment->samples = VK_SAMPLE_COUNT_64_BIT; break; }
+        }
+
+        if (attachment_desc->uses_stencil) {
+            switch (attachment_desc->stencil_load_op) {
+                case RE_LOAD_OP_CLEAR: { vk_attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_CLEAR; break; }
+                case RE_LOAD_OP_LOAD: { vk_attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_LOAD; break; }
+                case RE_LOAD_OP_DONT_CARE: { vk_attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; break; }
+            }
+
+            switch (attachment_desc->stencil_store_op) {
+                case RE_STORE_OP_STORE: { vk_attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_STORE; break; }
+                case RE_STORE_OP_DONT_CARE: { vk_attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE; break; }
+            }
+        }
+        else {
+            vk_attachment->stencilLoadOp = VK_ATTACHMENT_LOAD_OP_NONE;
+            vk_attachment->stencilStoreOp = VK_ATTACHMENT_STORE_OP_NONE;
+        }
+
+        vk_attachment->format = ;
+        vk_attachment->initialLayout = ;
+        vk_attachment->finalLayout = ;
+    }
+
+    for (uint32_t idx = 0; idx < subpass_count; ++idx) {
+        const re_SubpassDescription* subpass_desc = &render_pass_description->subpasses[idx];
+        VkSubpassDescription* vk_attachment = &vk_subpasses[idx];
+
+        // TODO: Fill Out
+    }
+
+    for (uint32_t idx = 0; idx < dependency_count; ++idx) {
+        const re_DependencyDescription* dependency_desc = &render_pass_description->dependencies[idx];
+        VkSubpassDependency* vk_attachment = &vk_dependencies[idx];
+
+        // TODO: Fill Out
+    }
+
+    VkRenderPassCreateInfo render_pass_create_info = {0};
+    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_create_info.attachmentCount = attachment_count;
+    render_pass_create_info.pAttachments = vk_attachments;
+    render_pass_create_info.subpassCount = subpass_count;
+    render_pass_create_info.pSubpasses = vk_subpasses;
+    render_pass_create_info.dependencyCount = dependency_count;
+    render_pass_create_info.pDependencies = vk_dependencies;
+
+
+    VkRenderPass render_pass = VK_NULL_HANDLE;
+    const VkResult render_pass_create_result = vkCreateRenderPass(
+        logical_device,
+        &render_pass_create_info,
+        allocator,
+        &render_pass
+    );
+
+    re_assert(render_pass_create_result == VK_SUCCESS, "Failed to create Vulkan rendering pass!");
+
+    return render_pass;
+}
 
 // *=================================================
 // *
@@ -193,17 +415,17 @@ re_VulkanContext __re_createVulkanContext(const re_GraphicsContextCreateInfo* cr
 
     switch (create_info->profile) {
         case RE_RENDERER_SIMPLE: {
-            descriptor_multiplier = RE_VULKAN_SIMPLE_DESCRIPTOR_SIZE_MULTIPLIER;
+            descriptor_multiplier = __RE_VULKAN_SIMPLE_DESCRIPTOR_SIZE_MULTIPLIER;
             break;
         }
 
         case RE_RENDERER_STANDARD: {
-            descriptor_multiplier = RE_VULKAN_STANDARD_DESCRIPTOR_SIZE_MULTIPLIER;
+            descriptor_multiplier = __RE_VULKAN_STANDARD_DESCRIPTOR_SIZE_MULTIPLIER;
             break;
         }
 
         case RE_RENDERER_HEAVY: {
-            descriptor_multiplier = RE_VULKAN_HEAVY_DESCRIPTOR_SIZE_MULTIPLIER;
+            descriptor_multiplier = __RE_VULKAN_HEAVY_DESCRIPTOR_SIZE_MULTIPLIER;
             break;
         }
         
@@ -213,13 +435,13 @@ re_VulkanContext __re_createVulkanContext(const re_GraphicsContextCreateInfo* cr
         }
     }
 
-    device_layer_create_info.max_texture_count = RE_VULKAN_TEXTURE_COUNT_BASE * descriptor_multiplier;
-    device_layer_create_info.max_sampler_count = RE_VULKAN_SAMPLER_COUNT_BASE * descriptor_multiplier;
-    device_layer_create_info.max_storage_image_count = RE_VULKAN_STORAGE_IMAGE_COUNT_BASE * descriptor_multiplier;
-    device_layer_create_info.max_uniform_buffer_count = RE_VULKAN_UNIFORM_BUFFER_COUNT_BASE * descriptor_multiplier;
-    device_layer_create_info.max_storage_buffer_count = RE_VULKAN_STORAGE_BUFFER_COUNT_BASE * descriptor_multiplier;
-    device_layer_create_info.max_input_attachment_count = RE_VULKAN_INPUT_ATTACHMENT_COUNT_BASE * descriptor_multiplier;
-    device_layer_create_info.max_dynamic_uniform_buffer_count = RE_VULKAN_DYNAMIC_UNIFORM_BUFFER_COUNT_BASE * descriptor_multiplier;
+    device_layer_create_info.max_texture_count = __RE_VULKAN_TEXTURE_COUNT_BASE * descriptor_multiplier;
+    device_layer_create_info.max_sampler_count = __RE_VULKAN_SAMPLER_COUNT_BASE * descriptor_multiplier;
+    device_layer_create_info.max_storage_image_count = __RE_VULKAN_STORAGE_IMAGE_COUNT_BASE * descriptor_multiplier;
+    device_layer_create_info.max_uniform_buffer_count = __RE_VULKAN_UNIFORM_BUFFER_COUNT_BASE * descriptor_multiplier;
+    device_layer_create_info.max_storage_buffer_count = __RE_VULKAN_STORAGE_BUFFER_COUNT_BASE * descriptor_multiplier;
+    device_layer_create_info.max_input_attachment_count = __RE_VULKAN_INPUT_ATTACHMENT_COUNT_BASE * descriptor_multiplier;
+    device_layer_create_info.max_dynamic_uniform_buffer_count = __RE_VULKAN_DYNAMIC_UNIFORM_BUFFER_COUNT_BASE * descriptor_multiplier;
 
     __re_createVulkanDeviceLayer(
         &context->device_layer,
@@ -227,40 +449,42 @@ re_VulkanContext __re_createVulkanContext(const re_GraphicsContextCreateInfo* cr
         allocator
     );
 
-    VkRenderPassCreateInfo render_pass_create_info = {0};
-    render_pass_create_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    // TODO: Assign these as needed!
-    // render_pass_create_info.flags = ;
-    // render_pass_create_info.attachmentCount = ;
-    // render_pass_create_info.pAttachments = ;
-    // render_pass_create_info.subpassCount = ;
-    // render_pass_create_info.pSubpasses = ;
-    // render_pass_create_info.dependencyCount = ;
-    // render_pass_create_info.pDependencies = ;
-
-    VkRenderPass render_pass = VK_NULL_HANDLE;
-    const VkResult render_pass_create_result = vkCreateRenderPass(
-        context->device_layer.logical_device,
-        &render_pass_create_info,
-        allocator,
-        &render_pass
+    const VkSurfaceFormatKHR color_format = __re_selectVulkanColorFormat(
+        context->device_layer.gpu.formats,
+        context->device_layer.gpu.format_count
+    );
+    const VkSurfaceFormatKHR depth_format = __re_selectVulkanDepthFormat(
+        context->device_layer.gpu.formats,
+        context->device_layer.gpu.format_count
     );
 
-    re_assert(render_pass_create_result == VK_SUCCESS, "Failed to create Vulkan rendering pass!");
+    // TODO: Refactor All Code Beyond This Point (Render Graphs, Add Pipeline, Ensure Swap Chain Consistency)
+
+    const VkRenderPass render_pass = __re_createVulkanRenderPass(
+        &create_info->render_pass_description,
+        context->device_layer.logical_device,
+        color_format,
+        depth_format,
+        allocator
+    );
     context->render_pass = render_pass;
 
     re_VkSwapChainLayerCreateInfo swap_chain_layer_create_info = {0};
     swap_chain_layer_create_info.window_size = __re_getVulkanExtent(create_info->window);
     swap_chain_layer_create_info.surface = surface;
     swap_chain_layer_create_info.render_pass = render_pass;
+    swap_chain_layer_create_info.color_format = color_format;
+    swap_chain_layer_create_info.present_mode = __re_selectVulkanPresentMode(
+        context->device_layer.gpu.present_modes,
+        context->device_layer.gpu.present_mode_count,
+        create_info->vsync_enabled
+    );
     // TODO: Assign values here!
-    // swap_chain_layer_create_info.color_format = ;
-    // swap_chain_layer_create_info.present_mode = ;
     // swap_chain_layer_create_info.view_create_infos = ;
     // swap_chain_layer_create_info.view_count = ;
     // swap_chain_layer_create_info.image_usage_flags = ;
     // swap_chain_layer_create_info.target_frame_count = ;
-    // swap_chain_layer_create_info.is_vr_application = ;
+    // swap_chain_layer_create_info.view_layer_count = ;
     // swap_chain_layer_create_info.is_window_transparent = ;
 
     __re_createVulkanSwapChainLayer(

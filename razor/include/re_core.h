@@ -202,7 +202,7 @@ typedef enum re_WindowFlagBits {
 } re_WindowFlagBits;
 typedef uint32_t re_WindowFlag;
 
-typedef void(*re_WindowCloseCallback)();
+typedef void(*re_WindowCloseCallbackFn)();
 
 typedef struct re_WindowCreateInfo {
     const char* title;
@@ -242,7 +242,7 @@ RE_API void re_setWindowFullscreen(re_Window window, const bool fullscreen_enabl
 /// @brief Set the on-close callback for some window.
 /// @param window The window to assign the callback to.
 /// @param callback The callback to assign.
-RE_API void re_setWindowCloseCallback(re_Window window, const re_WindowCloseCallback callback);
+RE_API void re_setWindowCloseCallback(re_Window window, const re_WindowCloseCallbackFn callback);
 
 /// @brief Poll operating system and window events.
 /// @param window The window whose events are to be polled and processed.

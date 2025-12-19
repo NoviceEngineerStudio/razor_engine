@@ -12,7 +12,7 @@ typedef struct re_Window_T {
     DWORD prev_style;
     WINDOWPLACEMENT prev_place;
 
-    re_WindowCloseCallback onClose;
+    re_WindowCloseCallbackFn onClose;
 
     uint32_t width;
     uint32_t height;
@@ -369,7 +369,7 @@ void re_setWindowFullscreen(re_Window window, const bool fullscreen_enabled) {
 // *
 // *=================================================
 
-void re_setWindowCloseCallback(re_Window window, const re_WindowCloseCallback callback) {
+void re_setWindowCloseCallback(re_Window window, const re_WindowCloseCallbackFn callback) {
     re_assert(window != RE_NULL_HANDLE, "Attempting to set fullscreen mode of NULL window!");
 
     window->onClose = callback;

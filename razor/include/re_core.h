@@ -165,6 +165,12 @@ RE_API void re_free(void* src);
 /// @return A pointer to the chunk of memory (should match src).
 RE_API void* re_memset(void* src, const int value, const size_t size);
 
+/// @brief Copies a chunk of memory from one location to another.
+/// @param dst The destination to copy the memory to.
+/// @param src The source of the memory to be copied.
+/// @param size The amount of memory being copied.
+RE_API void* re_memcpy(void* dst, const void* src, const size_t size);
+
 /// @brief Allocate a chunk of aligned memory on the heap.
 /// @param size The number of bytes to allocate.
 /// @param alignment The byte count to align by.

@@ -34,13 +34,11 @@ VkDevice __re_createVulkanLogicalDevice(
 
 /// @brief Get Vulkan device queues for some queue family.
 /// @param queue_arr The array to store the gathered queues.
-/// @param queue_count The number of queues to be gathered.
-/// @param queue_family_index The queue family's index.
+/// @param queue_family The queue families data.
 /// @param logical_device The Vulkan logical device handle.
 void __re_getVulkanQueues(
     VkQueue* queue_arr,
-    const uint32_t queue_count,
-    const uint32_t queue_family_index,
+    const re_VkQueueFamily* queue_family,
     const VkDevice logical_device
 );
 

@@ -5,6 +5,7 @@
 
 #include <vulkan/vulkan.h>
 #include "./re_vulkan.h"
+#include "./re_vulkan_queues.h"
 
 #define RE_MAX_VULKAN_THREADS 1
 
@@ -15,15 +16,6 @@ typedef enum re_VkCmdPoolRole {
 
     RE_VK_CMD_POOL_ROLE_COUNT
 } re_VkCmdPoolRole;
-
-typedef enum re_VkQueueRole {
-    RE_VK_QUEUE_PRESENT,
-    RE_VK_QUEUE_COMPUTE,
-    RE_VK_QUEUE_GRAPHICS,
-    RE_VK_QUEUE_TRANSFER,
-
-    RE_VK_QUEUE_ROLE_COUNT
-} re_VkQueueRole;
 
 typedef struct re_VkGPU {
     VkPhysicalDevice physical_device;
@@ -39,10 +31,15 @@ typedef struct re_VkGPU {
     VkPresentModeKHR* present_modes;
     uint32_t present_mode_count;
 
-    uint32_t queue_indices[RE_VK_QUEUE_ROLE_COUNT];
+    uint32_t queue_family_count;
+    re_VkQueueFamily queue_families[RE_VK_QUEUE_ROLE_COUNT];
+
+    uint32_t queue_role_indices[RE_VK_QUEUE_ROLE_COUNT];
 } re_VkGPU;
 
 #define RE_VULKAN_MAX_CMD_POOLS RE_MAX_VULKAN_THREADS * RE_VK_CMD_POOL_ROLE_COUNT * (RE_VK_QUEUE_ROLE_COUNT - 1)
+#define RE_VULKAN_MAX_DEVICE_QUEUES RE_VK_QUEUE_PRESENT_COUNT + RE_VK_QUEUE_COMPUTE_COUNT + RE_VK_QUEUE_GRAPHICS_COUNT + RE_VK_QUEUE_TRANSFER_COUNT
+
 #define __re_getVulkanCmdPoolIndex(thread_index, queue_role, pool_role) ( \
     ((thread_index) * RE_VK_CMD_POOL_ROLE_COUNT * (RE_VK_QUEUE_ROLE_COUNT - 1)) +\
     ((queue_role) * RE_VK_CMD_POOL_ROLE_COUNT) + \
@@ -57,7 +54,7 @@ typedef struct re_VkContext_T {
     VkDevice logical_device;
     VkDescriptorPool desc_pool;
 
-    VkQueue queues[RE_VK_QUEUE_ROLE_COUNT]; // ? The size of this may be updated if multiple queues are needed per family
+    VkQueue queues[RE_VULKAN_MAX_DEVICE_QUEUES];
     VkCommandPool cmd_pools[RE_VULKAN_MAX_CMD_POOLS];
 
     VkAllocationCallbacks* allocator;

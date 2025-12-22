@@ -26,7 +26,7 @@ typedef struct re_Window_T {
 #include <vulkan/vulkan_win32.h>
 
 #define __RE_VULKAN_WINDOW_EXTENSION_COUNT 2u
-static const char* __RE_VULKAN_WINDOW_EXTENSIONS[__RE_VULKAN_WINDOW_EXTENSION_COUNT] = {
+static const char* const __RE_VULKAN_WINDOW_EXTENSIONS[__RE_VULKAN_WINDOW_EXTENSION_COUNT] = {
     VK_KHR_SURFACE_EXTENSION_NAME,
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME
 };
@@ -96,7 +96,7 @@ LRESULT CALLBACK __re_processWin32WindowEvents(
 // *
 // *=================================================
 
-const char** __re_getVulkanWindowExtensions(uint32_t* extension_count) {
+const char* const* __re_getVulkanWindowExtensions(uint32_t* extension_count) {
     *extension_count = __RE_VULKAN_WINDOW_EXTENSION_COUNT;
     return __RE_VULKAN_WINDOW_EXTENSIONS;
 }

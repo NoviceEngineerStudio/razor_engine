@@ -16,7 +16,7 @@
 
 bool __re_vulkanAvailable() {
     uint32_t req_extension_count = 0;
-    const char** req_extensions = __re_getVulkanWindowExtensions(&req_extension_count);
+    const char* const* req_extensions = __re_getVulkanWindowExtensions(&req_extension_count);
 
     uint32_t __instance_extension_count = 0;
     const VkResult get_extensions_result = vkEnumerateInstanceExtensionProperties(
@@ -115,32 +115,18 @@ re_VkContext __re_createVulkanContext(const re_GraphicsInstanceCreateInfo* creat
     const VkDevice logical_device = __re_createVulkanLogicalDevice(gpu, allocator);
     context->logical_device = logical_device;
 
-    // ? The following all assume one queue per family (may be changed later)
+    uint32_t queue_count_offset = 0;
+    for (uint32_t idx = 0; idx < gpu->queue_family_count; ++idx) {
+        const re_VkQueueFamily* queue_family = &gpu->queue_families[idx];
 
-    __re_getVulkanQueues(
-        &context->queues[RE_VK_QUEUE_GRAPHICS],
-        1,
-        gpu->queue_indices[RE_VK_QUEUE_GRAPHICS],
-        logical_device
-    );
-    __re_getVulkanQueues(
-        &context->queues[RE_VK_QUEUE_PRESENT],
-        1,
-        gpu->queue_indices[RE_VK_QUEUE_PRESENT],
-        logical_device
-    );
-    __re_getVulkanQueues(
-        &context->queues[RE_VK_QUEUE_COMPUTE],
-        1,
-        gpu->queue_indices[RE_VK_QUEUE_COMPUTE],
-        logical_device
-    );
-    __re_getVulkanQueues(
-        &context->queues[RE_VK_QUEUE_TRANSFER],
-        1,
-        gpu->queue_indices[RE_VK_QUEUE_TRANSFER],
-        logical_device
-    );
+        __re_getVulkanQueues(
+            &context->queues[queue_count_offset],
+            queue_family,
+            logical_device
+        );
+
+        queue_count_offset += queue_family->queue_count;
+    }
 
     __re_createVulkanCommandPools(
         context->cmd_pools,

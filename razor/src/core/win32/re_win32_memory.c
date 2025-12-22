@@ -68,6 +68,19 @@ void* re_memset(void* src, const int value, const size_t size) {
 
 // *=================================================
 // *
+// * re_memcpy
+// *
+// *=================================================
+
+void* re_memcpy(void* dst, const void* src, const size_t size) {
+    re_assert(src != RE_NULL_HANDLE, "Cannot memcpy from NULL pointer!");
+    re_assert(dst != RE_NULL_HANDLE, "Cannot memcpy to NULL pointer!");
+
+    return memcpy(dst, src, size);
+}
+
+// *=================================================
+// *
 // * re_mallocAlign
 // *
 // *=================================================

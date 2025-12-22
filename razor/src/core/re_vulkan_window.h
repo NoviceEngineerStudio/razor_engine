@@ -9,7 +9,7 @@
 /// @brief Returns the list of required Vulkan window extensions.
 /// @param extension_count A pointer to where the extension count will be stored.
 /// @return The list of required Vulkan window extensions.
-const char** __re_getVulkanWindowExtensions(uint32_t* extension_count);
+const char* const* __re_getVulkanWindowExtensions(uint32_t* extension_count);
 
 /// @brief Creates a Vulkan window surface.
 /// @param window The window to derive the surface for.

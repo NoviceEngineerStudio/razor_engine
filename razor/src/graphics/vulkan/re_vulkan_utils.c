@@ -127,6 +127,7 @@ bool __re_fillVulkanGPU(
     VkQueueFamilyProperties* families = (VkQueueFamilyProperties*)re_malloc(sizeof(VkQueueFamilyProperties) * family_count);
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device, &__family_count, families);
     
+    uint32_t selected_queue_family_count = 0;
     bool queues_assigned[RE_VK_QUEUE_ROLE_COUNT] = {0};
     for (uint32_t idx = 0; idx < family_count; ++idx) {
         const VkQueueFamilyProperties family = families[idx];
@@ -136,8 +137,13 @@ bool __re_fillVulkanGPU(
         }
 
         if (!queues_assigned[RE_VK_QUEUE_GRAPHICS] && family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-            gpu->queue_indices[RE_VK_QUEUE_GRAPHICS] = idx;
+            gpu->queue_role_indices[RE_VK_QUEUE_GRAPHICS] = selected_queue_family_count;
             queues_assigned[RE_VK_QUEUE_GRAPHICS] = true;
+
+            re_VkQueueFamily* queue_family_data = &gpu->queue_families[selected_queue_family_count++]; 
+            queue_family_data->family_index = idx;
+            __re_addRoleToVulkanQueue(queue_family_data, RE_VK_QUEUE_GRAPHICS);
+
             continue;
         }
 
@@ -146,35 +152,54 @@ bool __re_fillVulkanGPU(
             vkGetPhysicalDeviceSurfaceSupportKHR(physical_device, idx, surface, &present_support);
 
             if (present_support) {
-                gpu->queue_indices[RE_VK_QUEUE_PRESENT] = idx;
+                gpu->queue_role_indices[RE_VK_QUEUE_PRESENT] = selected_queue_family_count;
                 queues_assigned[RE_VK_QUEUE_PRESENT] = true;
+
+                re_VkQueueFamily* queue_family_data = &gpu->queue_families[selected_queue_family_count++]; 
+                queue_family_data->family_index = idx;
+                __re_addRoleToVulkanQueue(queue_family_data, RE_VK_QUEUE_PRESENT);
+
                 continue;
             }
         }
 
         if (!queues_assigned[RE_VK_QUEUE_TRANSFER] && family.queueFlags & VK_QUEUE_TRANSFER_BIT) {
-            gpu->queue_indices[RE_VK_QUEUE_TRANSFER] = idx;
+            gpu->queue_role_indices[RE_VK_QUEUE_TRANSFER] = selected_queue_family_count;
             queues_assigned[RE_VK_QUEUE_TRANSFER] = true;
+
+            re_VkQueueFamily* queue_family_data = &gpu->queue_families[selected_queue_family_count++]; 
+            queue_family_data->family_index = idx;
+            __re_addRoleToVulkanQueue(queue_family_data, RE_VK_QUEUE_TRANSFER);
+
             continue;
         }
 
         if (!queues_assigned[RE_VK_QUEUE_COMPUTE] && family.queueFlags & VK_QUEUE_COMPUTE_BIT) {
-            gpu->queue_indices[RE_VK_QUEUE_COMPUTE] = idx;
+            gpu->queue_role_indices[RE_VK_QUEUE_COMPUTE] = selected_queue_family_count;
             queues_assigned[RE_VK_QUEUE_COMPUTE] = true;
+
+            re_VkQueueFamily* queue_family_data = &gpu->queue_families[selected_queue_family_count++]; 
+            queue_family_data->family_index = idx;
+            __re_addRoleToVulkanQueue(queue_family_data, RE_VK_QUEUE_COMPUTE);
+
             continue;
         }
     }
 
+    gpu->queue_family_count = selected_queue_family_count;
     re_free(families);
 
     if (!queues_assigned[RE_VK_QUEUE_GRAPHICS]) {
         return false;
     }
 
+    const uint32_t graphics_queue_index = gpu->queue_role_indices[RE_VK_QUEUE_GRAPHICS];
     for (uint32_t idx = 0; idx < RE_VK_QUEUE_ROLE_COUNT; ++idx) {
         if (!queues_assigned[idx]) {
-            gpu->queue_indices[idx] = gpu->queue_indices[RE_VK_QUEUE_GRAPHICS];
+            gpu->queue_role_indices[idx] = graphics_queue_index;
             queues_assigned[idx] = true;
+
+            __re_addRoleToVulkanQueue(&gpu->queue_families[graphics_queue_index], idx);
         }
     }
 
@@ -331,6 +356,12 @@ void __re_clearVulkanGPU(re_VkGPU* gpu) {
 
     gpu->format_count = 0;
     gpu->present_mode_count = 0;
+
+    for (uint32_t idx = 0; idx < gpu->queue_family_count; ++idx) {
+        __re_clearVulkanQueueFamily(&gpu->queue_families[idx]);
+    }
+
+    gpu->queue_family_count = 0;
 }
 
 // *=================================================
@@ -343,39 +374,22 @@ VkDevice __re_createVulkanLogicalDevice(
     const re_VkGPU* gpu,
     const VkAllocationCallbacks* allocator
 ) {
-    // TODO: This may be altered if we ever need multiple queues from the same family
-    // ? If this occurs, the algorithm below will need to take the maximum number of queues
-    // ? per family group (shared indices).
-    const float queue_priorities[1] = { 1.0f };
-
-    uint32_t unique_queue_count = 0;
+    uint32_t queue_family_count = gpu->queue_family_count;
     VkDeviceQueueCreateInfo queue_create_infos[RE_VK_QUEUE_ROLE_COUNT] = {0};
 
-    for (uint32_t idx = 0; idx < RE_VK_QUEUE_ROLE_COUNT; ++idx) {
-        const uint32_t family_index = gpu->queue_indices[idx];
+    for (uint32_t idx = 0; idx < queue_family_count; ++idx) {
+        const re_VkQueueFamily* queue_family = &gpu->queue_families[idx];
 
-        bool is_duplicate_index = false;
-        for (uint32_t jdx = idx + 1; jdx < RE_VK_QUEUE_ROLE_COUNT; ++jdx) {
-            if (family_index == gpu->queue_indices[jdx]) {
-                is_duplicate_index = true;
-                break;
-            }
-        }
-        
-        if (is_duplicate_index) {
-            continue;
-        }
-
-        VkDeviceQueueCreateInfo* queue_create_info = &queue_create_infos[unique_queue_count++];
+        VkDeviceQueueCreateInfo* queue_create_info = &queue_create_infos[idx];
         queue_create_info->sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-        queue_create_info->queueFamilyIndex = family_index;
-        queue_create_info->queueCount = 1; // TODO: Should match queue_priorities size (static 1 for now)
-        queue_create_info->pQueuePriorities = queue_priorities;
+        queue_create_info->queueFamilyIndex = queue_family->family_index;
+        queue_create_info->queueCount = queue_family->queue_count;
+        queue_create_info->pQueuePriorities = queue_family->queue_priorities;
     }
 
     VkDeviceCreateInfo device_create_info = {0};
     device_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    device_create_info.queueCreateInfoCount = unique_queue_count;
+    device_create_info.queueCreateInfoCount = queue_family_count;
     device_create_info.pQueueCreateInfos = queue_create_infos;
     device_create_info.enabledExtensionCount = __RE_VULKAN_ENABLED_DEVICE_EXTENSION_COUNT;
     device_create_info.ppEnabledExtensionNames = __RE_VULKAN_ENABLED_DEVICE_EXTENSIONS;
@@ -402,14 +416,13 @@ VkDevice __re_createVulkanLogicalDevice(
 
 void __re_getVulkanQueues(
     VkQueue* queue_arr,
-    const uint32_t queue_count,
-    const uint32_t queue_family_index,
+    const re_VkQueueFamily* queue_family,
     const VkDevice logical_device
 ) {
-    for (uint32_t idx = 0; idx < queue_count; ++idx) {
+    for (uint32_t idx = 0; idx < queue_family->queue_count; ++idx) {
         vkGetDeviceQueue(
             logical_device,
-            queue_family_index,
+            queue_family->family_index,
             idx,
             &queue_arr[idx]
         );
@@ -433,38 +446,13 @@ void __re_createVulkanCommandPools(
             continue;
         }
 
-        const uint32_t queue_family_index = gpu->queue_indices[queue_role];
+        // TODO: Check if the role has already been covered due to shared family, and if so, assign the pre-made values
 
-
-        bool is_duplicate = false;
-        for (int32_t other_queue_role = ((int32_t)queue_role) - 1; other_queue_role >= 0; --other_queue_role) {
-            if (other_queue_role == RE_VK_QUEUE_PRESENT) {
-                continue;
-            }
-            
-            const uint32_t other_family_index = gpu->queue_indices[other_queue_role];
-
-            if (queue_family_index == other_family_index) {
-                is_duplicate = true;
-                
-                for (uint32_t pool_role = 0; pool_role < RE_VK_CMD_POOL_ROLE_COUNT; ++pool_role) {
-                    for (uint32_t thread_idx = 0; thread_idx < RE_MAX_VULKAN_THREADS; ++thread_idx) {
-                        cmd_pool_arr[__re_getVulkanCmdPoolIndex(thread_idx, queue_role, pool_role)] = 
-                        cmd_pool_arr[__re_getVulkanCmdPoolIndex(thread_idx, other_queue_role, pool_role)];
-                    }
-                }
-
-                break;
-            }
-        }
-
-        if (is_duplicate) {
-            continue;
-        }
+        const re_VkQueueFamily* queue_family = &gpu->queue_families[gpu->queue_role_indices[queue_role]];
 
         VkCommandPoolCreateInfo cmd_pool_create_info = {0};
         cmd_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-        cmd_pool_create_info.queueFamilyIndex = queue_family_index;
+        cmd_pool_create_info.queueFamilyIndex = queue_family->family_index;
 
         for (uint32_t pool_role = 0; pool_role < RE_VK_CMD_POOL_ROLE_COUNT; ++pool_role) {
             switch (pool_role) {

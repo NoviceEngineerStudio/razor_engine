@@ -153,11 +153,13 @@ void __re_destroyVulkanContext(re_VkContext* context) {
     re_VkContext context_data = *context;
     re_assert(context_data != RE_NULL_HANDLE, "Attempting to destroy NULL Vulkan context!");
 
+    VkDevice logical_device = context_data->logical_device;
     VkAllocationCallbacks* allocator = context_data->allocator;
+
+    vkDeviceWaitIdle(logical_device);
 
     __re_clearVulkanGPU(&context_data->gpu);
 
-    VkDevice logical_device = context_data->logical_device;
     VkCommandPool* cmd_pools = context_data->cmd_pools;
 
     for (uint32_t idx = 0; idx < RE_VULKAN_MAX_CMD_POOLS; ++idx) {

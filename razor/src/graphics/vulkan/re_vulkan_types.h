@@ -42,7 +42,7 @@ typedef struct re_VkGPU {
 
 #define __re_getVulkanCmdPoolIndex(thread_index, queue_role, pool_role) ( \
     ((thread_index) * RE_VK_CMD_POOL_ROLE_COUNT * (RE_VK_QUEUE_ROLE_COUNT - 1)) +\
-    ((queue_role) * RE_VK_CMD_POOL_ROLE_COUNT) + \
+    ((queue_role - 1) * RE_VK_CMD_POOL_ROLE_COUNT) + \
     (pool_role) \
 )
 

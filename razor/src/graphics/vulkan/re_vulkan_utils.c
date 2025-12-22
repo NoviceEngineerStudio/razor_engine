@@ -441,51 +441,73 @@ void __re_createVulkanCommandPools(
     const re_VkGPU* gpu,
     const VkAllocationCallbacks* allocator
 ) {
-    for (uint32_t queue_role = 0; queue_role < RE_VK_QUEUE_ROLE_COUNT; ++queue_role) {
-        if (queue_role == RE_VK_QUEUE_PRESENT) {
-            continue;
-        }
+    for (uint32_t idx = 0; idx < gpu->queue_family_count; ++idx) {
+        const re_VkQueueFamily* queue_family = &gpu->queue_families[idx];
 
-        // TODO: Check if the role has already been covered due to shared family, and if so, assign the pre-made values
-
-        const re_VkQueueFamily* queue_family = &gpu->queue_families[gpu->queue_role_indices[queue_role]];
+        const re_VkQueueRoleFlag roles_flag = queue_family->roles_flag;
 
         VkCommandPoolCreateInfo cmd_pool_create_info = {0};
         cmd_pool_create_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         cmd_pool_create_info.queueFamilyIndex = queue_family->family_index;
 
-        for (uint32_t pool_role = 0; pool_role < RE_VK_CMD_POOL_ROLE_COUNT; ++pool_role) {
-            switch (pool_role) {
-                case RE_VK_CMD_POOL_FRAME: {
-                    cmd_pool_create_info.flags = __RE_VULKAN_CMD_POOL_FRAME_FLAGS;
-                    break;
-                }
-
-                case RE_VK_CMD_POOL_STATIC: {
-                    cmd_pool_create_info.flags = __RE_VULKAN_CMD_POOL_STATIC_FLAGS;
-                    break;
-                }
-
-                case RE_VK_CMD_POOL_ONE_SHOT: {
-                    cmd_pool_create_info.flags = __RE_VULKAN_CMD_POOL_ONE_SHOT_FLAGS;
-                    break;
-                }
-
-                default: {
-                    re_assert(false, "Unknown Vulkan command pool type used in creation! Type: %d", pool_role);
-                    break;
-                }
+        bool copy_pools = false;
+        re_VkQueueRole first_assigned_queue_role = 0;
+        for (uint32_t queue_role = 0; queue_role < RE_VK_QUEUE_ROLE_COUNT; ++queue_role) {
+            if (queue_role == RE_VK_QUEUE_PRESENT || (roles_flag & (1 << queue_role)) == 0) { 
+                continue;
             }
 
-            for (uint32_t thread_idx = 0; thread_idx < RE_MAX_VULKAN_THREADS; ++thread_idx) {
-                const VkResult cmd_pool_create_result = vkCreateCommandPool(
-                    logical_device,
-                    &cmd_pool_create_info,
-                    allocator,
-                    &cmd_pool_arr[__re_getVulkanCmdPoolIndex(thread_idx, queue_role, pool_role)]
-                );
+            if (copy_pools) {
+                for (uint32_t pool_role = 0; pool_role < RE_VK_CMD_POOL_ROLE_COUNT; ++pool_role) {
+                    for (uint32_t thread_idx = 0; thread_idx < RE_MAX_VULKAN_THREADS; ++thread_idx) {
+                        const uint32_t pool_idx = __re_getVulkanCmdPoolIndex(thread_idx, queue_role, pool_role);
+                        const uint32_t other_pool_idx = __re_getVulkanCmdPoolIndex(thread_idx, first_assigned_queue_role, pool_role);
 
-                re_assert(cmd_pool_create_result == VK_SUCCESS, "Failed to create Vulkan command pool!");
+                        cmd_pool_arr[pool_idx] = cmd_pool_arr[other_pool_idx];
+                    }
+                }
+
+                continue;
+            }
+
+            copy_pools = true;
+            first_assigned_queue_role = queue_role;
+
+            for (uint32_t pool_role = 0; pool_role < RE_VK_CMD_POOL_ROLE_COUNT; ++pool_role) {
+                switch (pool_role) {
+                    case RE_VK_CMD_POOL_FRAME: {
+                        cmd_pool_create_info.flags = __RE_VULKAN_CMD_POOL_FRAME_FLAGS;
+                        break;
+                    }
+
+                    case RE_VK_CMD_POOL_STATIC: {
+                        cmd_pool_create_info.flags = __RE_VULKAN_CMD_POOL_STATIC_FLAGS;
+                        break;
+                    }
+
+                    case RE_VK_CMD_POOL_ONE_SHOT: {
+                        cmd_pool_create_info.flags = __RE_VULKAN_CMD_POOL_ONE_SHOT_FLAGS;
+                        break;
+                    }
+
+                    default: {
+                        re_assert(false, "Unknown Vulkan command pool type used in creation! Type: %d", pool_role);
+                        break;
+                    }
+                }
+
+                for (uint32_t thread_idx = 0; thread_idx < RE_MAX_VULKAN_THREADS; ++thread_idx) {
+                    const uint32_t pool_idx = __re_getVulkanCmdPoolIndex(thread_idx, queue_role, pool_role);
+
+                    const VkResult cmd_pool_create_result = vkCreateCommandPool(
+                        logical_device,
+                        &cmd_pool_create_info,
+                        allocator,
+                        &cmd_pool_arr[pool_idx]
+                    );
+
+                    re_assert(cmd_pool_create_result == VK_SUCCESS, "Failed to create Vulkan command pool!");
+                }
             }
         }
     }

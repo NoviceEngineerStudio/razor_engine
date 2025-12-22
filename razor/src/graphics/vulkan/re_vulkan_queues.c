@@ -26,24 +26,28 @@ void __re_addRoleToVulkanQueue(
         case RE_VK_QUEUE_PRESENT: {
             new_queue_count = RE_VK_QUEUE_PRESENT_COUNT;
             new_queue_priorities = __RE_VK_QUEUE_PRESENT_PRIORITIES;
+            queue_family->roles_flag |= RE_VK_QUEUE_BIT_PRESENT;
             break;
         }
 
         case RE_VK_QUEUE_COMPUTE: {
             new_queue_count = RE_VK_QUEUE_COMPUTE_COUNT;
             new_queue_priorities = __RE_VK_QUEUE_COMPUTE_PRIORITIES;
+            queue_family->roles_flag |= RE_VK_QUEUE_BIT_COMPUTE;
             break;
         }
 
         case RE_VK_QUEUE_GRAPHICS: {
             new_queue_count = RE_VK_QUEUE_GRAPHICS_COUNT;
             new_queue_priorities = __RE_VK_QUEUE_GRAPHICS_PRIORITIES;
+            queue_family->roles_flag |= RE_VK_QUEUE_BIT_GRAPHICS;
             break;
         }
 
         case RE_VK_QUEUE_TRANSFER: {
             new_queue_count = RE_VK_QUEUE_TRANSFER_COUNT;
             new_queue_priorities = __RE_VK_QUEUE_TRANSFER_PRIORITIES;
+            queue_family->roles_flag |= RE_VK_QUEUE_BIT_TRANSFER;
             break;
         }
 
@@ -58,14 +62,13 @@ void __re_addRoleToVulkanQueue(
 
         float* old_queue_priorities = queue_family->queue_priorities;
 
-        const size_t new_priorities_arr_size = new_queue_count * sizeof(float);
-        queue_family->queue_priorities = re_malloc(new_priorities_arr_size);
+        queue_family->queue_priorities = re_calloc(new_queue_count, sizeof(float));
 
         if (old_queue_priorities != RE_NULL_HANDLE) {
             re_memcpy(
                 queue_family->queue_priorities,
                 old_queue_priorities,
-                new_priorities_arr_size
+                new_queue_count * sizeof(float)
             );
 
             re_free(old_queue_priorities);
@@ -96,6 +99,7 @@ void __re_clearVulkanQueueFamily(re_VkQueueFamily* queue_family) {
 
     queue_family->family_index = 0;
     queue_family->queue_count = 0;
+    queue_family->roles_flag = 0;
 }
 
 #endif

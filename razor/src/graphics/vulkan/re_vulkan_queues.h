@@ -19,8 +19,17 @@ typedef enum re_VkQueueRole {
     RE_VK_QUEUE_ROLE_COUNT
 } re_VkQueueRole;
 
+typedef enum re_VkQueueRoleBits {
+    RE_VK_QUEUE_BIT_PRESENT  = 1 << RE_VK_QUEUE_PRESENT,
+    RE_VK_QUEUE_BIT_COMPUTE  = 1 << RE_VK_QUEUE_COMPUTE,
+    RE_VK_QUEUE_BIT_GRAPHICS = 1 << RE_VK_QUEUE_GRAPHICS,
+    RE_VK_QUEUE_BIT_TRANSFER = 1 << RE_VK_QUEUE_TRANSFER
+} re_VkQueueRoleBits;
+typedef uint32_t re_VkQueueRoleFlag;
+
 typedef struct re_VkQueueFamily {
     uint32_t family_index;
+    re_VkQueueRoleFlag roles_flag;
     float* queue_priorities;
     uint32_t queue_count;
 } re_VkQueueFamily;

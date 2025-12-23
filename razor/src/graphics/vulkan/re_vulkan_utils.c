@@ -48,6 +48,13 @@ static const char* __RE_VULKAN_ENABLED_DEVICE_EXTENSIONS[__RE_VULKAN_ENABLED_DEV
 #define __RE_VULKAN_CMD_POOL_STATIC_FLAGS VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
 #define __RE_VULKAN_CMD_POOL_ONE_SHOT_FLAGS VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
 
+#define __RE_VULKAN_DEVICE_FEATURE_COUNT (sizeof(VkPhysicalDeviceFeatures) / sizeof(VkBool32))
+
+typedef union __re_VkPhysicalDeviceFeaturesIterable {
+    VkPhysicalDeviceFeatures features_struct;
+    VkBool32 features_list[__RE_VULKAN_DEVICE_FEATURE_COUNT];
+} __re_VkPhysicalDeviceFeaturesIterable;
+
 // *=================================================
 // *
 // * __re_fillVulkanGPU
@@ -372,6 +379,7 @@ void __re_clearVulkanGPU(re_VkGPU* gpu) {
 
 VkDevice __re_createVulkanLogicalDevice(
     const re_VkGPU* gpu,
+    const VkPhysicalDeviceFeatures* enabled_features,
     const VkAllocationCallbacks* allocator
 ) {
     uint32_t queue_family_count = gpu->queue_family_count;
@@ -393,7 +401,18 @@ VkDevice __re_createVulkanLogicalDevice(
     device_create_info.pQueueCreateInfos = queue_create_infos;
     device_create_info.enabledExtensionCount = __RE_VULKAN_ENABLED_DEVICE_EXTENSION_COUNT;
     device_create_info.ppEnabledExtensionNames = __RE_VULKAN_ENABLED_DEVICE_EXTENSIONS;
-    device_create_info.pEnabledFeatures = &gpu->features; // TODO: This should be more selective!
+
+    __re_VkPhysicalDeviceFeaturesIterable enabled_features_iterable = {0};
+    enabled_features_iterable.features_struct = *enabled_features;
+
+    __re_VkPhysicalDeviceFeaturesIterable gpu_features_iterable = {0};
+    gpu_features_iterable.features_struct = gpu->features;
+
+    for (uint32_t idx = 0; idx < __RE_VULKAN_DEVICE_FEATURE_COUNT; ++idx) {
+        enabled_features_iterable.features_list[idx] &= gpu_features_iterable.features_list[idx];
+    }
+
+    device_create_info.pEnabledFeatures = &enabled_features_iterable.features_struct;
 
     VkDevice logical_device = VK_NULL_HANDLE;
     const VkResult device_create_result = vkCreateDevice(

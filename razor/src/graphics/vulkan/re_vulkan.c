@@ -112,7 +112,9 @@ re_VkContext __re_createVulkanContext(const re_GraphicsInstanceCreateInfo* creat
     context->gpu = __re_selectVulkanGPU(instance, surface);
     const re_VkGPU* gpu = &context->gpu;
 
-    const VkDevice logical_device = __re_createVulkanLogicalDevice(gpu, allocator);
+    VkPhysicalDeviceFeatures enabled_features = {0}; // TODO: Set enabled features
+
+    const VkDevice logical_device = __re_createVulkanLogicalDevice(gpu, &enabled_features, allocator);
     context->logical_device = logical_device;
 
     uint32_t queue_count_offset = 0;

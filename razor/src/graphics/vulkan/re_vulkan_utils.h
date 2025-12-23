@@ -25,10 +25,12 @@ void __re_clearVulkanGPU(re_VkGPU* gpu);
 
 /// @brief Create a Vulkan logical device.
 /// @param gpu The selected Vulkan GPU.
+/// @param features The desired device features to use.
 /// @param allocator Vulkan allocation callbacks.
 /// @return A handle to the new Vulkan logical device.
 VkDevice __re_createVulkanLogicalDevice(
     const re_VkGPU* gpu,
+    const VkPhysicalDeviceFeatures* features,
     const VkAllocationCallbacks* allocator
 );
 
